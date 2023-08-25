@@ -17,3 +17,7 @@ matplotlib
 ## Examples
 
 Scripts `double_gyre.py`, `vortex_shear.py`, and `vortex_wall.py` run resp. double gyre, Rankine vortex shear instabiltiy, and vortex-wall interaction numerical experiments.
+
+## Acknowledgments
+
+Louity acknowledges the support of the ERC EU project 856408-STUOD for the development of this package.
