@@ -19,6 +19,10 @@ class Masks:
                 F.avg_pool2d(self.psi.type(mtype), (3,3), stride=(1,1))[0,0] > 1/18)
             )
 
+        self.psi_distbound1 = torch.logical_and(
+            F.avg_pool2d(self.psi.type(mtype), (3,3), stride=(1,1), padding=(1,1)) < 17/18,
+            self.psi)
+
         self.q_distbound1 = torch.logical_and(
             F.avg_pool2d(self.q.type(mtype), (3,3), stride=(1,1), padding=(1,1)) < 17/18,
             self.q)
