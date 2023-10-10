@@ -142,7 +142,8 @@ class QGFV:
             sol = solve_helmholtz_dst(cst[...,1:-1,1:-1], self.helmholtz_dst)
 
         self.homsol = cst + sol * self.lambda_sq
-        self.homsol_mean = (interp_TP(self.homsol) * self.masks.q).mean((-1,-2), keepdim=True)
+        self.homsol_mean = (
+                interp_TP(self.homsol)*self.masks.q).mean((-1,-2), keepdim=True)
         self.helmholtz_dst = self.helmholtz_dst.type(torch.float32)
 
 
@@ -154,6 +155,28 @@ class QGFV:
               )
             )
             + self.beta * (self.y - self.y0))
+
+    def compute_psi_from_q(self):
+        """PV inversion."""
+        elliptic_rhs = self.interp_TP(self.q - self.beta * (self.y - self.y0))
+        helmholtz_rhs = torch.einsum(
+                'lm,...mxy->...lxy', self.Cl2m, elliptic_rhs)
+        if self.cap_matrices is not None:
+            psi_modes = solve_helmholtz_dst_cmm(
+                    helmholtz_rhs*self.masks.psi[...,1:-1,1:-1],
+                    self.helmholtz_dst, self.cap_matrices,
+                    self.masks.psi_irrbound_xids,
+                    self.masks.psi_irrbound_yids,
+                    self.masks.psi)
+        else:
+            psi_modes = solve_helmholtz_dst(helmholtz_rhs, self.helmholtz_dst)
+
+        # Add homogeneous solutions to ensure mass conservation
+        alpha = -self.interp_TP(psi_modes).mean((-1,-2), keepdim=True) \
+                / self.homsol_mean
+        psi_modes += alpha * self.homsol
+        self.psi = torch.einsum('lm,...mxy->...lxy', self.Cm2l, psi_modes)
+
 
     def set_wind_forcing(self, curl_tau):
         self.wind_forcing = curl_tau / self.H[0]
@@ -194,7 +217,8 @@ class QGFV:
         else:
             dpsi_modes = solve_helmholtz_dst(helmholtz_rhs, self.helmholtz_dst)
         # Add homogeneous solutions to ensure mass conservation
-        alpha = -self.interp_TP(dpsi_modes).mean((-1,-2), keepdim=True) / self.homsol_mean
+        alpha = -self.interp_TP(dpsi_modes).mean((-1,-2), keepdim=True) \
+                / self.homsol_mean
         dpsi_modes += alpha * self.homsol
         dpsi = torch.einsum('lm,...mxy->...lxy', self.Cm2l, dpsi_modes)
 
