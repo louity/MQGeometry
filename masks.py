@@ -23,6 +23,10 @@ class Masks:
             F.avg_pool2d(self.psi.type(mtype), (3,3), stride=(1,1), padding=(1,1)) < 17/18,
             self.psi)
 
+        self.omega_inside = torch.logical_and(
+                torch.logical_not(self.psi_distbound1),
+                self.psi)
+
         self.q_distbound1 = torch.logical_and(
             F.avg_pool2d(self.q.type(mtype), (3,3), stride=(1,1), padding=(1,1)) < 17/18,
             self.q)
@@ -58,7 +62,9 @@ class Masks:
         self.not_u = self.not_u.type(mtype)
         self.not_v = self.not_v.type(mtype)
         self.not_psi = self.not_psi.type(mtype)
+        self.omega_inside = self.omega_inside.type(mtype)
 
+        self.psi_distbound1 = self.psi_distbound1.type(mtype)
         self.q_distbound1 = self.q_distbound1.type(mtype)
 
         self.u_distbound1 = self.u_distbound1.type(mtype)
